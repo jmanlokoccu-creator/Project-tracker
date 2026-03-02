@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7fa;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        .project {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            padding: 20px;
+        }
+        .project-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .project-name {
+            font-size: 1.5em;
+            color: #2980b9;
+        }
+        .due-date {
+            font-style: italic;
+            color: #7f8c8d;
+        }
+        .progress-bar {
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            height: 20px;
+            margin: 10px 0;
+            position: relative;
+        }
+        .progress-fill {
+            background-color: #27ae60;
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        .progress-text {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-weight: bold;
+        }
+        .task-list {
+            list-style: none;
+            padding: 0;
+        }
+        .task-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .task-item input[type="checkbox"] {
+            margin-right: 10px;
+        }
+        .task-item.completed label {
+            text-decoration: line-through;
+            color: #95a5a6;
+        }
+        .add-task-form {
+            display: flex;
+            margin-top: 10px;
+        }
+        .add-task-form input[type="text"] {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .add-task-form button {
+            padding: 8px 12px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+        .add-task-form button:hover {
+            background-color: #2980b9;
+        }
+        .set-due-date {
+            margin-top: 10px;
+        }
+        .set-due-date input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .set-due-date button {
+            padding: 8px 12px;
+            background-color: #e67e22;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+        .set-due-date button:hover {
+            background-color: #d35400;
+        }
+        .reminder {
+            color: #e74c3c;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Project Tracker</h1>
+    <div id="projects-container"></div>
+
+    <script>
+        const projectsContainer = document.getElementById('projects-container');
+        const STORAGE_KEY = 'projectTrackerData';
+
+        // Sample projects (5-10)
+        const sampleProjects = [
+            { name: 'Project Alpha', dueDate: '2026-04-01', tasks: [{ text: 'Task 1', completed: false }, { text: 'Task 2', completed: true }] },
+            { name: 'Project Beta', dueDate: '2026-05-15', tasks: [{ text: 'Research', completed: false }] },
+            { name: 'Project Gamma', dueDate: '2026-06-30', tasks: [] },
+            { name: 'Project Delta', dueDate: '2026-07-10', tasks: [{ text: 'Design', completed: false }, { text: 'Implement', completed: false }] },
+            { name: 'Project Epsilon', dueDate: '2026-08-20', tasks: [{ text: 'Test', completed: true }] },
+            { name: 'Project Zeta', dueDate: '2026-09-05', tasks: [] },
+            { name: 'Project Eta', dueDate: '2026-10-15', tasks: [{ text: 'Deploy', completed: false }] },
+        ];
+
+        let projects = loadProjects();
+
+        function loadProjects() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            return saved ? JSON.parse(saved) : sampleProjects;
+        }
+
+        function saveProjects() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+        }
+
+        function renderProjects() {
+            projectsContainer.innerHTML = '';
+            projects.forEach((project, index) => {
+                const projectDiv = document.createElement('div');
+                projectDiv.classList.add('project');
+
+                const header = document.createElement('div');
+                header.classList.add('project-header');
+                const name = document.createElement('h2');
+                name.classList.add('project-name');
+                name.textContent = project.name;
+                const due = document.createElement('span');
+                due.classList.add('due-date');
+                due.textContent = project.dueDate ? `Due: ${project.dueDate}` : 'No due date set';
+                header.appendChild(name);
+                header.appendChild(due);
+
+                const progressBar = document.createElement('div');
+                progressBar.classList.add('progress-bar');
+                const fill = document.createElement('div');
+                fill.classList.add('progress-fill');
+                const text = document.createElement('span');
+                text.classList.add('progress-text');
+                progressBar.appendChild(fill);
+                progressBar.appendChild(text);
+
+                const taskList = document.createElement('ul');
+                taskList.classList.add('task-list');
+                project.tasks.forEach((task, taskIndex) => {
+                    const li = document.createElement('li');
+                    li.classList.add('task-item');
+                    if (task.completed) li.classList.add('completed');
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.checked = task.completed;
+                    checkbox.addEventListener('change', () => {
+                        project.tasks[taskIndex].completed = checkbox.checked;
+                        saveProjects();
+                        renderProjects();
+                    });
+                    const label = document.createElement('label');
+                    label.textContent = task.text;
+                    li.appendChild(checkbox);
+                    li.appendChild(label);
+                    taskList.appendChild(li);
+                });
+
+                const addForm = document.createElement('form');
+                addForm.classList.add('add-task-form');
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.placeholder = 'Add new task...';
+                const button = document.createElement('button');
+                button.textContent = 'Add';
+                button.type = 'submit';
+                addForm.appendChild(input);
+                addForm.appendChild(button);
+                addForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    if (input.value.trim()) {
+                        project.tasks.push({ text: input.value.trim(), completed: false });
+                        input.value = '';
+                        saveProjects();
+                        renderProjects();
+                    }
+                });
+
+                const dueForm = document.createElement('div');
+                dueForm.classList.add('set-due-date');
+                const dueInput = document.createElement('input');
+                dueInput.type = 'date';
+                dueInput.value = project.dueDate || '';
+                const dueButton = document.createElement('button');
+                dueButton.textContent = 'Set Due Date';
+                dueForm.appendChild(dueInput);
+                dueForm.appendChild(dueButton);
+                dueButton.addEventListener('click', () => {
+                    project.dueDate = dueInput.value;
+                    saveProjects();
+                    renderProjects();
+                });
+
+                const reminder = document.createElement('div');
+                reminder.classList.add('reminder');
+                if (project.dueDate) {
+                    const dueTime = new Date(project.dueDate).getTime();
+                    const now = Date.now();
+                    if (dueTime < now) {
+                        reminder.textContent = 'Overdue!';
+                    } else if (dueTime - now < 86400000) { // Less than 1 day
+                        reminder.textContent = 'Due soon!';
+                    }
+                }
+
+                // Update progress
+                const totalTasks = project.tasks.length;
+                const completedTasks = project.tasks.filter(t => t.completed).length;
+                const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+                fill.style.width = `${progress}%`;
+                text.textContent = `${Math.round(progress)}%`;
+
+                // Request notification permission on load
+                if (Notification.permission !== 'granted') {
+                    Notification.requestPermission();
+                }
+
+                // Simple reminder: check every minute
+                setInterval(() => {
+                    if (project.dueDate && Notification.permission === 'granted') {
+                        const dueTime = new Date(project.dueDate).getTime();
+                        const now = Date.now();
+                        if (dueTime - now < 3600000 && dueTime > now) { // Less than 1 hour
+                            new Notification(`${project.name} Reminder`, { body: 'Due soon!' });
+                        }
+                    }
+                }, 60000);
+
+                projectDiv.appendChild(header);
+                projectDiv.appendChild(progressBar);
+                projectDiv.appendChild(taskList);
+                projectDiv.appendChild(addForm);
+                projectDiv.appendChild(dueForm);
+                projectDiv.appendChild(reminder);
+
+                projectsContainer.appendChild(projectDiv);
+            });
+        }
+
+        renderProjects();
+    </script>
+</body>
+</html>
